@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T2C Fulfillment KPI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#ffffff; --text:#1d2433; --muted:#6b7385; --line:#e4e7ec;
+  --accent:#e8590c; --accent2:#1c7ed6; --good:#2b8a3e; --bad:#c92a2a; --warn-bg:#fff4e6; --warn:#a64b00;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:1280px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+h1{font-size:20px;margin:0}
+h1 small{display:block;font-size:12px;font-weight:400;color:var(--muted)}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select,button{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
+button{cursor:pointer}
+.banner{background:var(--warn-bg);color:var(--warn);border:1px solid #ffd8a8;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:13px}
+.grid{display:grid;gap:12px}
+.kpi4{grid-template-columns:repeat(4,1fr)}
+.kpi4s{grid-template-columns:repeat(4,1fr)}
+.charts{grid-template-columns:1fr 1fr}
+@media(max-width:900px){.kpi4,.kpi4s,.charts{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.kpi4,.kpi4s,.charts{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+.kpi .value{font-size:26px;font-weight:700;margin:4px 0 2px}
+.kpi .sub{font-size:12px;color:var(--muted)}
+.kpi.main{border-top:3px solid var(--accent)}
+.kpi.small .value{font-size:18px}
+.delta{font-weight:600}
+.delta.up{color:var(--good)} .delta.down{color:var(--bad)}
+.card h3{margin:0 0 10px;font-size:14px}
+.chartbox{position:relative;height:260px}
+.section{margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600;background:#fafbfc;position:sticky;top:0}
+tr.sel td{background:#fff4e6}
+.tablewrap{overflow-x:auto}
+footer{color:var(--muted);font-size:12px;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Fulfillment KPI <small>T2C Mall · Đơn tự fulfill (trừ FBS, trừ Sỉ)</small></h1>
+    <div class="controls">
+      <label for="month">Tháng</label>
+      <select id="month"></select>
+      <button id="reload">Tải lại</button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" style="display:none"></div>
+
+  <div class="grid kpi4">
+    <div class="card kpi main"><div class="label">Đơn / giờ / người</div><div class="value" id="k_prod">–</div><div class="sub" id="d_prod"></div></div>
+    <div class="card kpi main"><div class="label">CP packaging / đơn</div><div class="value" id="k_pack">–</div><div class="sub" id="d_pack"></div></div>
+    <div class="card kpi main"><div class="label">CP fulfillment / đơn</div><div class="value" id="k_ffo">–</div><div class="sub" id="d_ffo"></div></div>
+    <div class="card kpi main"><div class="label">% Fulfillment / Doanh thu</div><div class="value" id="k_pct">–</div><div class="sub" id="d_pct"></div></div>
+  </div>
+
+  <div class="grid kpi4s section">
+    <div class="card kpi small"><div class="label">Đơn xử lý</div><div class="value" id="s_don">–</div><div class="sub" id="s_don_sub"></div></div>
+    <div class="card kpi small"><div class="label">Doanh thu tự fulfill</div><div class="value" id="s_dt">–</div><div class="sub" id="s_dt_sub"></div></div>
+    <div class="card kpi small"><div class="label">Tổng giờ công</div><div class="value" id="s_gio">–</div><div class="sub" id="s_gio_sub"></div></div>
+    <div class="card kpi small"><div class="label">Nhân sự</div><div class="value" id="s_ns">–</div><div class="sub" id="s_ns_sub"></div></div>
+  </div>
+
+  <div class="grid charts section">
+    <div class="card"><h3>Năng suất: đơn / giờ / người</h3><div class="chartbox"><canvas id="c_prod"></canvas></div></div>
+    <div class="card"><h3>Chi phí / đơn (VND)</h3><div class="chartbox"><canvas id="c_cost"></canvas></div></div>
+    <div class="card"><h3>% Chi phí fulfillment / Doanh thu</h3><div class="chartbox"><canvas id="c_pct"></canvas></div></div>
+    <div class="card"><h3>Đơn xử lý & Giờ công</h3><div class="chartbox"><canvas id="c_vol"></canvas></div></div>
+  </div>
+
+  <div class="card section">
+    <h3>Chi tiết theo tháng</h3>
+    <div class="tablewrap"><table id="tbl"></table></div>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+/* ================= CONFIG =================
+ * CSV_URL: link "Publish to web" (CSV) của sheet Dash_data.
+ * Để trống = chạy dữ liệu DEMO.
+ * Dash_data: header dòng 1, mỗi tháng 1 dòng, cột:
+ * thang | don_tong | don_fbs | don_si | doanh_thu | gio_hc | gio_ot | sl_ft | sl_pt | cp_packaging | cp_boc_xep | cp_fulfillment
+ */
+var CONFIG = { CSV_URL: '' };
+
+/* DỮ LIỆU DEMO – số giả lập, KHÔNG phải số thật */
+var DEMO_DATA = [
+  {thang:'202605',don_tong:58200,don_fbs:4100,don_si:900, doanh_thu:13100000000,gio_hc:3280,gio_ot:520,sl_ft:9,sl_pt:12,cp_packaging:168500000,cp_boc_xep:18200000,cp_fulfillment:304700000},
+  {thang:'202606',don_tong:61500,don_fbs:4300,don_si:1100,doanh_thu:13900000000,gio_hc:3350,gio_ot:610,sl_ft:9,sl_pt:12,cp_packaging:179800000,cp_boc_xep:19500000,cp_fulfillment:323300000},
+  {thang:'202607',don_tong:57800,don_fbs:4500,don_si:800, doanh_thu:12600000000,gio_hc:3300,gio_ot:480,sl_ft:9,sl_pt:12,cp_packaging:162400000,cp_boc_xep:16900000,cp_fulfillment:295300000},
+  {thang:'202608',don_tong:66900,don_fbs:4800,don_si:1300,doanh_thu:14800000000,gio_hc:3420,gio_ot:690,sl_ft:9,sl_pt:13,cp_packaging:191200000,cp_boc_xep:21400000,cp_fulfillment:343600000},
+  {thang:'202609',don_tong:72400,don_fbs:5200,don_si:1500,doanh_thu:16200000000,gio_hc:3480,gio_ot:720,sl_ft:9,sl_pt:13,cp_packaging:204900000,cp_boc_xep:23100000,cp_fulfillment:364000000},
+  {thang:'202610',don_tong:78100,don_fbs:5600,don_si:1400,doanh_thu:17600000000,gio_hc:3369,gio_ot:745,sl_ft:9,sl_pt:13,cp_packaging:218300000,cp_boc_xep:24800000,cp_fulfillment:382264000}
+];
+
+var NUM_FIELDS = ['don_tong','don_fbs','don_si','doanh_thu','gio_hc','gio_ot','sl_ft','sl_pt','cp_packaging','cp_boc_xep','cp_fulfillment'];
+var DATA = [];
+var CHARTS = {};
+
+/* ---------- Data layer (giai đoạn 2: chỉ sửa hàm này để đọc Supabase) ---------- */
+function loadData(cb){
+  if(!CONFIG.CSV_URL){ cb(DEMO_DATA.slice(), true); return; }
+  var url = CONFIG.CSV_URL + (CONFIG.CSV_URL.indexOf('?')>-1?'&':'?') + '_t=' + Date.now();
+  fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+    .then(function(txt){ cb(parseCSV(txt), false); })
+    .catch(function(e){ showBanner('Không đọc được Dash_data ('+e.message+'). Đang hiển thị dữ liệu DEMO.'); cb(DEMO_DATA.slice(), true); });
+}
+
+function parseCSV(txt){
+  var rows = [], row = [], cell = '', q = false, i, c;
+  for(i=0;i<txt.length;i++){
+    c = txt[i];
+    if(q){ if(c==='"'){ if(txt[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(cell); cell=''; }
+    else if(c==='\n'){ row.push(cell); rows.push(row); row=[]; cell=''; }
+    else if(c!=='\r') cell+=c;
+  }
+  if(cell!==''||row.length){ row.push(cell); rows.push(row); }
+  var head = rows.shift().map(function(h){return h.trim().toLowerCase();});
+  var out = [];
+  rows.forEach(function(r){
+    if(!r[0] || !String(r[0]).trim()) return;
+    var o = {};
+    head.forEach(function(h,j){ o[h] = (r[j]||'').trim(); });
+    NUM_FIELDS.forEach(function(f){ o[f] = toNum(o[f]); });
+    o.thang = String(o.thang).replace(/\D/g,'');
+    out.push(o);
+  });
+  out.sort(function(a,b){return a.thang<b.thang?-1:1;});
+  return out;
+}
+function toNum(v){ if(v==null||v==='') return 0; var n = parseFloat(String(v).replace(/[^\d.\-]/g,'')); return isNaN(n)?0:n; }
+
+/* ---------- Metrics ---------- */
+function calc(d){
+  var don = d.don_tong - d.don_fbs - d.don_si;
+  var gio = d.gio_hc + d.gio_ot;
+  return {
+    thang:d.thang, don:don, gio:gio, gio_hc:d.gio_hc, gio_ot:d.gio_ot,
+    sl_ft:d.sl_ft, sl_pt:d.sl_pt, dt:d.doanh_thu,
+    don_tong:d.don_tong, don_fbs:d.don_fbs, don_si:d.don_si,
+    prod: gio ? don/gio : null,
+    pack: don ? d.cp_packaging/don : null,
+    ffo:  don ? d.cp_fulfillment/don : null,
+    pct:  d.doanh_thu ? d.cp_fulfillment/d.doanh_thu*100 : null
+  };
+}
+
+/* ---------- Format ---------- */
+function fmt(n,dec){ if(n==null||isNaN(n)) return '–'; return n.toLocaleString('vi-VN',{minimumFractionDigits:dec||0,maximumFractionDigits:dec||0}); }
+function fmtBn(n){ return fmt(n/1e9,2)+' tỷ'; }
+function mLabel(t){ return 'T'+parseInt(t.slice(4),10)+'/'+t.slice(0,4); }
+function deltaHtml(cur,prev,higherIsGood,unit,dec){
+  if(cur==null||prev==null) return '<span>Không có tháng trước</span>';
+  var diff = cur-prev, pct = prev? diff/prev*100 : 0;
+  var good = higherIsGood ? diff>0 : diff<0;
+  var cls = diff===0 ? '' : (good?'up':'down');
+  var arrow = diff>0?'▲':(diff<0?'▼':'■');
+  return '<span class="delta '+cls+'">'+arrow+' '+fmt(Math.abs(diff),dec)+(unit||'')+' ('+fmt(Math.abs(pct),1)+'%)</span> so với tháng trước';
+}
+function showBanner(msg){ var b=document.getElementById('banner'); b.innerHTML=msg; b.style.display='block'; }
+function setText(id,v){ document.getElementById(id).innerHTML = v; }
+
+/* ---------- Render ---------- */
+function renderMonth(idx){
+  var m = DATA.map(calc), c = m[idx], p = idx>0 ? m[idx-1] : null;
+  setText('k_prod', fmt(c.prod,1));
+  setText('d_prod', deltaHtml(c.prod, p&&p.prod, true, '', 1));
+  setText('k_pack', fmt(c.pack)+' đ');
+  setText('d_pack', deltaHtml(c.pack, p&&p.pack, false, ' đ', 0));
+  setText('k_ffo', fmt(c.ffo)+' đ');
+  setText('d_ffo', deltaHtml(c.ffo, p&&p.ffo, false, ' đ', 0));
+  setText('k_pct', fmt(c.pct,2)+'%');
+  setText('d_pct', deltaHtml(c.pct, p&&p.pct, false, ' đ.p', 2));
+
+  setText('s_don', fmt(c.don));
+  setText('s_don_sub', 'Tổng '+fmt(c.don_tong)+' · FBS '+fmt(c.don_fbs)+' · Sỉ '+fmt(c.don_si));
+  setText('s_dt', fmtBn(c.dt));
+  setText('s_dt_sub', 'DT / đơn: '+fmt(c.don?c.dt/c.don:null)+' đ');
+  setText('s_gio', fmt(c.gio)+' h');
+  setText('s_gio_sub', 'HC '+fmt(c.gio_hc)+' h · OT '+fmt(c.gio_ot)+' h ('+fmt(c.gio?c.gio_ot/c.gio*100:null,1)+'%)');
+  setText('s_ns', fmt(c.sl_ft+c.sl_pt));
+  setText('s_ns_sub', 'Full-time '+fmt(c.sl_ft)+' · Part-time '+fmt(c.sl_pt));
+
+  var rows = document.querySelectorAll('#tbl tbody tr');
+  for(var i=0;i<rows.length;i++) rows[i].className = (i===idx?'sel':'');
+}
+
+function renderTable(){
+  var m = DATA.map(calc);
+  var h = '<thead><tr><th>Tháng</th><th>Đơn xử lý</th><th>Giờ công</th><th>Nhân sự</th><th>Đơn/giờ/người</th><th>Packaging/đơn</th><th>Fulfillment/đơn</th><th>DT (tỷ)</th><th>% FF/DT</th></tr></thead><tbody>';
+  m.forEach(function(r){
+    h += '<tr><td>'+mLabel(r.thang)+'</td><td>'+fmt(r.don)+'</td><td>'+fmt(r.gio)+'</td><td>'+fmt(r.sl_ft+r.sl_pt)+'</td><td>'+fmt(r.prod,1)+'</td><td>'+fmt(r.pack)+'</td><td>'+fmt(r.ffo)+'</td><td>'+fmt(r.dt/1e9,2)+'</td><td>'+fmt(r.pct,2)+'%</td></tr>';
+  });
+  document.getElementById('tbl').innerHTML = h+'</tbody>';
+}
+
+function mkChart(id,cfg){ if(CHARTS[id]) CHARTS[id].destroy(); CHARTS[id] = new Chart(document.getElementById(id), cfg); }
+
+function renderCharts(){
+  var m = DATA.map(calc), labels = m.map(function(r){return mLabel(r.thang);});
+  var base = { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{position:'bottom'}} };
+  function opts(extra){ var o = JSON.parse(JSON.stringify(base)); for(var k in extra) o[k]=extra[k]; return o; }
+  var tickVN = { callback:function(v){ return Number(v).toLocaleString('vi-VN'); } };
+
+  mkChart('c_prod',{type:'line',data:{labels:labels,datasets:[{label:'Đơn/giờ/người',data:m.map(function(r){return r.prod&&+r.prod.toFixed(2);}),borderColor:'#e8590c',backgroundColor:'rgba(232,89,12,.12)',fill:true,tension:.3}]},options:opts({scales:{y:{beginAtZero:true}}})});
+
+  mkChart('c_cost',{type:'bar',data:{labels:labels,datasets:[
+    {label:'Packaging/đơn',data:m.map(function(r){return Math.round(r.pack);}),backgroundColor:'#ffa94d'},
+    {label:'Fulfillment/đơn (tổng)',data:m.map(function(r){return Math.round(r.ffo);}),backgroundColor:'#1c7ed6'}
+  ]},options:opts({scales:{y:{beginAtZero:true,ticks:tickVN}}})});
+
+  mkChart('c_pct',{type:'line',data:{labels:labels,datasets:[{label:'% FF/DT',data:m.map(function(r){return r.pct&&+r.pct.toFixed(2);}),borderColor:'#2b8a3e',tension:.3}]},options:opts({scales:{y:{beginAtZero:true,ticks:{callback:function(v){return v+'%';}}}}})});
+
+  mkChart('c_vol',{type:'bar',data:{labels:labels,datasets:[
+    {type:'bar',label:'Đơn xử lý',data:m.map(function(r){return r.don;}),backgroundColor:'#74c0fc',yAxisID:'y'},
+    {type:'line',label:'Giờ công',data:m.map(function(r){return r.gio;}),borderColor:'#e8590c',tension:.3,yAxisID:'y1'}
+  ]},options:opts({scales:{y:{beginAtZero:true,position:'left',ticks:tickVN},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false},ticks:tickVN}}})});
+}
+
+function init(){
+  loadData(function(data, isDemo){
+    DATA = data;
+    if(isDemo && !CONFIG.CSV_URL) showBanner('<b>DỮ LIỆU DEMO</b> – số liệu giả lập để duyệt giao diện. Điền <code>CONFIG.CSV_URL</code> (link publish CSV của sheet Dash_data) để chạy số thật.');
+    if(!DATA.length){ showBanner('Dash_data chưa có dòng nào.'); return; }
+    var sel = document.getElementById('month');
+    sel.innerHTML = DATA.map(function(r,i){ return '<option value="'+i+'">'+mLabel(r.thang)+'</option>'; }).join('');
+    sel.value = DATA.length-1;
+    sel.onchange = function(){ renderMonth(+sel.value); };
+    renderTable(); renderCharts(); renderMonth(DATA.length-1);
+    setText('foot', 'Nguồn: '+(isDemo?'DEMO':'GSheet Dash_data')+' · Cập nhật lúc '+new Date().toLocaleString('vi-VN'));
+  });
+}
+document.getElementById('reload').onclick = init;
+init();
+</script>
+</body>
+</html>
