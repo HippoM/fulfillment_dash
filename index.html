@@ -95,7 +95,10 @@ footer{color:var(--muted);font-size:12px;margin-top:14px}
  * Dash_data: header dòng 1, mỗi tháng 1 dòng, cột:
  * thang | don_tong | don_fbs | don_si | doanh_thu | gio_hc | gio_ot | sl_ft | sl_pt | cp_packaging | cp_boc_xep | cp_fulfillment
  */
-var CONFIG = { CSV_URL: '' };
+var CONFIG = {
+  API_URL: 'https://script.google.com/macros/s/AKfycbx0pV96NT69nEdAwNLITuQVTGOa0sxaWnuyD-sQY8_gfKCjr8GRcHzysKM5Ghq-ruhW/exec',// URL Web App Apps Script (.../exec) – ưu tiên, số realtime
+  CSV_URL: ''   // (dự phòng) link Publish to web CSV của Dash_data
+};
 
 /* DỮ LIỆU DEMO – số giả lập, KHÔNG phải số thật */
 var DEMO_DATA = [
@@ -113,6 +116,20 @@ var CHARTS = {};
 
 /* ---------- Data layer (giai đoạn 2: chỉ sửa hàm này để đọc Supabase) ---------- */
 function loadData(cb){
+  if(CONFIG.API_URL){
+    fetch(CONFIG.API_URL).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(j){
+        if(!j.ok) throw new Error(j.error||'API lỗi');
+        var rows = j.rows.map(function(o){
+          NUM_FIELDS.forEach(function(f){ o[f] = toNum(o[f]); });
+          o.thang = String(o.thang).replace(/\D/g,''); return o;
+        });
+        rows.sort(function(a,b){return a.thang<b.thang?-1:1;});
+        cb(rows, false);
+      })
+      .catch(function(e){ showBanner('Không gọi được API ('+e.message+'). Đang hiển thị dữ liệu DEMO.'); cb(DEMO_DATA.slice(), true); });
+    return;
+  }
   if(!CONFIG.CSV_URL){ cb(DEMO_DATA.slice(), true); return; }
   var url = CONFIG.CSV_URL + (CONFIG.CSV_URL.indexOf('?')>-1?'&':'?') + '_t=' + Date.now();
   fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
@@ -236,7 +253,7 @@ function renderCharts(){
 function init(){
   loadData(function(data, isDemo){
     DATA = data;
-    if(isDemo && !CONFIG.CSV_URL) showBanner('<b>DỮ LIỆU DEMO</b> – số liệu giả lập để duyệt giao diện. Điền <code>CONFIG.CSV_URL</code> (link publish CSV của sheet Dash_data) để chạy số thật.');
+    if(isDemo && !CONFIG.CSV_URL && !CONFIG.API_URL) showBanner('<b>DỮ LIỆU DEMO</b> – số liệu giả lập để duyệt giao diện. Điền <code>CONFIG.CSV_URL</code> (link publish CSV của sheet Dash_data) để chạy số thật.');
     if(!DATA.length){ showBanner('Dash_data chưa có dòng nào.'); return; }
     var sel = document.getElementById('month');
     sel.innerHTML = DATA.map(function(r,i){ return '<option value="'+i+'">'+mLabel(r.thang)+'</option>'; }).join('');
