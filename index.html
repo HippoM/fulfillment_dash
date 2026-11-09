@@ -8,14 +8,14 @@
 <style>
 :root{
   --bg:#f5f6f8; --card:#ffffff; --text:#1d2433; --muted:#6b7385; --line:#e4e7ec;
-  --accent:#e8590c; --accent2:#1c7ed6; --good:#2b8a3e; --bad:#c92a2a; --warn-bg:#fff4e6; --warn:#a64b00;
+  --accent:#1971c2; --accent2:#1864ab; --good:#2b8a3e; --bad:#c92a2a; --warn-bg:#fff4e6; --warn:#a64b00;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 .wrap{max-width:1280px;margin:0 auto;padding:16px}
 header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
-h1{font-size:20px;margin:0}
-h1 small{display:block;font-size:12px;font-weight:400;color:var(--muted)}
+h1{font-size:30px;margin:0;color:var(--accent2)}
+h1 small{display:block;font-size:13px;font-weight:400;color:var(--muted)}
 .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 select,button{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
 button{cursor:pointer}
@@ -41,7 +41,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th:first-child,td:first-child{text-align:left}
 th{color:var(--muted);font-weight:600;background:#fafbfc;position:sticky;top:0}
-tr.sel td{background:#fff4e6}
+tr.sel td{background:#e7f5ff}
 .tablewrap{overflow-x:auto}
 footer{color:var(--muted);font-size:12px;margin-top:14px}
 </style>
@@ -235,18 +235,18 @@ function renderCharts(){
   function opts(extra){ var o = JSON.parse(JSON.stringify(base)); for(var k in extra) o[k]=extra[k]; return o; }
   var tickVN = { callback:function(v){ return Number(v).toLocaleString('vi-VN'); } };
 
-  mkChart('c_prod',{type:'line',data:{labels:labels,datasets:[{label:'Đơn/giờ/người',data:m.map(function(r){return r.prod&&+r.prod.toFixed(2);}),borderColor:'#e8590c',backgroundColor:'rgba(232,89,12,.12)',fill:true,tension:.3}]},options:opts({scales:{y:{beginAtZero:true}}})});
+  mkChart('c_prod',{type:'line',data:{labels:labels,datasets:[{label:'Đơn/giờ/người',data:m.map(function(r){return r.prod&&+r.prod.toFixed(2);}),borderColor:'#1971c2',backgroundColor:'rgba(25,113,194,.12)',fill:true,tension:.3}]},options:opts({scales:{y:{beginAtZero:true}}})});
 
   mkChart('c_cost',{type:'bar',data:{labels:labels,datasets:[
-    {label:'Packaging/đơn',data:m.map(function(r){return Math.round(r.pack);}),backgroundColor:'#ffa94d'},
-    {label:'Fulfillment/đơn (tổng)',data:m.map(function(r){return Math.round(r.ffo);}),backgroundColor:'#1c7ed6'}
+    {label:'Packaging/đơn',data:m.map(function(r){return Math.round(r.pack);}),backgroundColor:'#74c0fc'},
+    {label:'Fulfillment/đơn (tổng)',data:m.map(function(r){return Math.round(r.ffo);}),backgroundColor:'#1864ab'}
   ]},options:opts({scales:{y:{beginAtZero:true,ticks:tickVN}}})});
 
-  mkChart('c_pct',{type:'line',data:{labels:labels,datasets:[{label:'% FF/DT',data:m.map(function(r){return r.pct&&+r.pct.toFixed(2);}),borderColor:'#2b8a3e',tension:.3}]},options:opts({scales:{y:{beginAtZero:true,ticks:{callback:function(v){return v+'%';}}}}})});
+  mkChart('c_pct',{type:'line',data:{labels:labels,datasets:[{label:'% FF/DT',data:m.map(function(r){return r.pct&&+r.pct.toFixed(2);}),borderColor:'#0c8599',tension:.3}]},options:opts({scales:{y:{beginAtZero:true,ticks:{callback:function(v){return v+'%';}}}}})});
 
   mkChart('c_vol',{type:'bar',data:{labels:labels,datasets:[
     {type:'bar',label:'Đơn xử lý',data:m.map(function(r){return r.don;}),backgroundColor:'#74c0fc',yAxisID:'y'},
-    {type:'line',label:'Giờ công',data:m.map(function(r){return r.gio;}),borderColor:'#e8590c',tension:.3,yAxisID:'y1'}
+    {type:'line',label:'Giờ công',data:m.map(function(r){return r.gio;}),borderColor:'#1864ab',tension:.3,yAxisID:'y1'}
   ]},options:opts({scales:{y:{beginAtZero:true,position:'left',ticks:tickVN},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false},ticks:tickVN}}})});
 }
 
