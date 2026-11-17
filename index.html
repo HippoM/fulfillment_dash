@@ -258,10 +258,10 @@ function renderCharts(){
   mkChart('c_cost',{type:'bar',data:{labels:labels,datasets:[
     {label:'Packaging/đơn',data:m.map(function(r){return Math.round(r.pack);}),backgroundColor:'#74c0fc'},
     {label:'Fulfillment/đơn (tổng)',data:m.map(function(r){return Math.round(r.ffo);}),backgroundColor:'#1864ab'},
-    {type:'line',label:'Doanh thu TB/đơn (trục phải)',data:m.map(function(r){return r.don?Math.round(r.dt/r.don):null;}),borderColor:'#f08c00',backgroundColor:'#f08c00',tension:.3,yAxisID:'y1'}
+    {type:'line',label:'Doanh thu TB/đơn',data:m.map(function(r){return r.don?Math.round(r.dt/r.don):null;}),borderColor:'#f08c00',backgroundColor:'#f08c00',tension:.3,yAxisID:'y1'}
   ]},options:opts({scales:{y:{beginAtZero:true,position:'left',title:{display:true,text:'Chi phí/đơn'},ticks:tickVN},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'DT/đơn'},ticks:tickVN}}})});
 
-  mkChart('c_pct',{type:'line',data:{labels:labels,datasets:[{label:'% FF/DT',data:m.map(function(r){return r.pct&&+r.pct.toFixed(2);}),borderColor:'#0c8599',tension:.3}]},options:opts({scales:{y:{beginAtZero:true,ticks:{callback:function(v){return v+'%';}}}}})});
+  mkChart('c_pct',{type:'line',data:{labels:labels,datasets:[{label:'% FF/DT',data:m.map(function(r){return r.pct&&+r.pct.toFixed(2);}),borderColor:'#1971c2',tension:.3}]},options:opts({scales:{y:{beginAtZero:true,ticks:{callback:function(v){return v+'%';}}}}})});
 
   mkChart('c_vol',{type:'bar',data:{labels:labels,datasets:[
     {type:'bar',label:'Đơn xử lý',data:m.map(function(r){return r.don;}),backgroundColor:'#74c0fc',yAxisID:'y'},
