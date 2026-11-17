@@ -44,6 +44,9 @@ th{color:var(--muted);font-weight:600;background:#fafbfc;position:sticky;top:0}
 tr.sel td{background:#e7f5ff}
 .tablewrap{overflow-x:auto}
 footer{color:var(--muted);font-size:12px;margin-top:14px}
+.help{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:4px;border:1px solid var(--muted);border-radius:50%;font-size:10px;font-weight:600;color:var(--muted);cursor:pointer;vertical-align:1px;text-transform:none;letter-spacing:0;user-select:none}
+.help:hover,.help.on{border-color:var(--accent);color:var(--accent)}
+#tip{position:absolute;z-index:50;max-width:280px;background:#fff;color:var(--text);border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);padding:8px 12px;font-size:13px;line-height:1.45;display:none}
 </style>
 </head>
 <body>
@@ -60,17 +63,17 @@ footer{color:var(--muted);font-size:12px;margin-top:14px}
   <div id="banner" class="banner" style="display:none"></div>
 
   <div class="grid kpi4">
-    <div class="card kpi main"><div class="label">Đơn / giờ / người</div><div class="value" id="k_prod">–</div><div class="sub" id="d_prod"></div></div>
-    <div class="card kpi main"><div class="label">CP packaging / đơn</div><div class="value" id="k_pack">–</div><div class="sub" id="d_pack"></div></div>
-    <div class="card kpi main"><div class="label">CP fulfillment / đơn</div><div class="value" id="k_ffo">–</div><div class="sub" id="d_ffo"></div></div>
-    <div class="card kpi main"><div class="label">% Fulfillment / Doanh thu</div><div class="value" id="k_pct">–</div><div class="sub" id="d_pct"></div></div>
+    <div class="card kpi main"><div class="label">Đơn / giờ / người <span class="help" tabindex="0" data-tip="Đơn xử lý ÷ Tổng giờ công (HC + OT, cả full-time và part-time) trong tháng.">?</span></div><div class="value" id="k_prod">–</div><div class="sub" id="d_prod"></div></div>
+    <div class="card kpi main"><div class="label">CP packaging / đơn <span class="help" tabindex="0" data-tip="Chi phí packaging (COA 72210, Credit − Debit, gom theo Month PL) ÷ Đơn xử lý.">?</span></div><div class="value" id="k_pack">–</div><div class="sub" id="d_pack"></div></div>
+    <div class="card kpi main"><div class="label">CP fulfillment / đơn <span class="help" tabindex="0" data-tip="Tổng chi phí fulfillment ÷ Đơn xử lý. Tổng chi phí = lương (FT + PT + OT) + toàn bộ chi phí trong sheet Chi_phi_packaging (packaging, bốc xếp, …).">?</span></div><div class="value" id="k_ffo">–</div><div class="sub" id="d_ffo"></div></div>
+    <div class="card kpi main"><div class="label">% Fulfillment / Doanh thu <span class="help" tabindex="0" data-tip="Tổng chi phí fulfillment ÷ Doanh thu tự fulfill.">?</span></div><div class="value" id="k_pct">–</div><div class="sub" id="d_pct"></div></div>
   </div>
 
   <div class="grid kpi4s section">
-    <div class="card kpi small"><div class="label">Đơn xử lý</div><div class="value" id="s_don">–</div><div class="sub" id="s_don_sub"></div></div>
-    <div class="card kpi small"><div class="label">Doanh thu tự fulfill</div><div class="value" id="s_dt">–</div><div class="sub" id="s_dt_sub"></div></div>
-    <div class="card kpi small"><div class="label">Tổng giờ công</div><div class="value" id="s_gio">–</div><div class="sub" id="s_gio_sub"></div></div>
-    <div class="card kpi small"><div class="label">Nhân sự</div><div class="value" id="s_ns">–</div><div class="sub" id="s_ns_sub"></div></div>
+    <div class="card kpi small"><div class="label">Đơn xử lý <span class="help" tabindex="0" data-tip="Tổng đơn mọi kênh (đã loại đơn hủy, theo ngày đặt hàng) − đơn FBS (Shopee xử lý) − đơn Sỉ. Đơn Top Value vẫn được tính.">?</span></div><div class="value" id="s_don">–</div><div class="sub" id="s_don_sub"></div></div>
+    <div class="card kpi small"><div class="label">Doanh thu tự fulfill <span class="help" tabindex="0" data-tip="Doanh thu theo công thức Sales Dashboard, không gồm đơn FBS và đơn Sỉ. DT/đơn = Doanh thu tự fulfill ÷ Đơn xử lý.">?</span></div><div class="value" id="s_dt">–</div><div class="sub" id="s_dt_sub"></div></div>
+    <div class="card kpi small"><div class="label">Tổng giờ công <span class="help" tabindex="0" data-tip="Tổng cột &quot;Tổng giờ&quot; sheet Luong (HC + OT) trong tháng. Hiện chưa gồm giờ HC của full-time.">?</span></div><div class="value" id="s_gio">–</div><div class="sub" id="s_gio_sub"></div></div>
+    <div class="card kpi small"><div class="label">Nhân sự <span class="help" tabindex="0" data-tip="Số mã nhân viên có giờ làm > 0 trong tháng, chia Full-time / Part-time theo cột &quot;Hình thức làm việc&quot; sheet Luong.">?</span></div><div class="value" id="s_ns">–</div><div class="sub" id="s_ns_sub"></div></div>
   </div>
 
   <div class="grid charts section">
@@ -87,6 +90,7 @@ footer{color:var(--muted);font-size:12px;margin-top:14px}
 
   <footer id="foot"></footer>
 </div>
+<div id="tip"></div>
 
 <script>
 /* ================= CONFIG =================
@@ -229,18 +233,33 @@ function renderTable(){
 
 function mkChart(id,cfg){ if(CHARTS[id]) CHARTS[id].destroy(); CHARTS[id] = new Chart(document.getElementById(id), cfg); }
 
+/* Legend: line dataset -> icon gạch ngang, bar -> ô vuông */
+var LEGEND_LABELS = {
+  usePointStyle:true, pointStyleWidth:22,
+  generateLabels:function(chart){
+    var items = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+    items.forEach(function(it){
+      var ds = chart.data.datasets[it.datasetIndex], t = ds.type || chart.config.type;
+      if(t==='line'){ it.pointStyle='line'; it.strokeStyle=ds.borderColor; it.fillStyle=ds.borderColor; it.lineWidth=3; }
+      else { it.pointStyle='rect'; }
+    });
+    return items;
+  }
+};
+
 function renderCharts(){
   var m = DATA.map(calc), labels = m.map(function(r){return mLabel(r.thang);});
   var base = { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{position:'bottom'}} };
-  function opts(extra){ var o = JSON.parse(JSON.stringify(base)); for(var k in extra) o[k]=extra[k]; return o; }
+  function opts(extra){ var o = JSON.parse(JSON.stringify(base)); for(var k in extra) o[k]=extra[k]; o.plugins.legend.labels = LEGEND_LABELS; return o; }
   var tickVN = { callback:function(v){ return Number(v).toLocaleString('vi-VN'); } };
 
   mkChart('c_prod',{type:'line',data:{labels:labels,datasets:[{label:'Đơn/giờ/người',data:m.map(function(r){return r.prod&&+r.prod.toFixed(2);}),borderColor:'#1971c2',backgroundColor:'rgba(25,113,194,.12)',fill:true,tension:.3}]},options:opts({scales:{y:{beginAtZero:true}}})});
 
   mkChart('c_cost',{type:'bar',data:{labels:labels,datasets:[
     {label:'Packaging/đơn',data:m.map(function(r){return Math.round(r.pack);}),backgroundColor:'#74c0fc'},
-    {label:'Fulfillment/đơn (tổng)',data:m.map(function(r){return Math.round(r.ffo);}),backgroundColor:'#1864ab'}
-  ]},options:opts({scales:{y:{beginAtZero:true,ticks:tickVN}}})});
+    {label:'Fulfillment/đơn (tổng)',data:m.map(function(r){return Math.round(r.ffo);}),backgroundColor:'#1864ab'},
+    {type:'line',label:'Doanh thu TB/đơn (trục phải)',data:m.map(function(r){return r.don?Math.round(r.dt/r.don):null;}),borderColor:'#f08c00',backgroundColor:'#f08c00',tension:.3,yAxisID:'y1'}
+  ]},options:opts({scales:{y:{beginAtZero:true,position:'left',title:{display:true,text:'Chi phí/đơn'},ticks:tickVN},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'DT/đơn'},ticks:tickVN}}})});
 
   mkChart('c_pct',{type:'line',data:{labels:labels,datasets:[{label:'% FF/DT',data:m.map(function(r){return r.pct&&+r.pct.toFixed(2);}),borderColor:'#0c8599',tension:.3}]},options:opts({scales:{y:{beginAtZero:true,ticks:{callback:function(v){return v+'%';}}}}})});
 
@@ -264,6 +283,28 @@ function init(){
   });
 }
 document.getElementById('reload').onclick = init;
+
+/* Note định nghĩa: bấm ? để hiện, bấm chỗ khác để ẩn */
+(function(){
+  var tip = document.getElementById('tip'), cur = null;
+  function hide(){ tip.style.display='none'; if(cur) cur.classList.remove('on'); cur=null; }
+  function show(el){
+    hide(); cur = el; el.classList.add('on');
+    tip.textContent = el.getAttribute('data-tip'); tip.style.display='block';
+    var r = el.getBoundingClientRect(), w = tip.offsetWidth;
+    var left = Math.min(Math.max(8, r.left + window.scrollX - 12), document.documentElement.clientWidth - w - 8 + window.scrollX);
+    tip.style.left = left+'px'; tip.style.top = (r.bottom + window.scrollY + 6)+'px';
+  }
+  document.addEventListener('click', function(e){
+    var h = e.target.closest ? e.target.closest('.help') : null;
+    if(h){ e.stopPropagation(); if(h===cur) hide(); else show(h); } else if(!tip.contains(e.target)) hide();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape') hide();
+    if((e.key==='Enter'||e.key===' ') && e.target.classList && e.target.classList.contains('help')){ e.preventDefault(); show(e.target); }
+  });
+  window.addEventListener('resize', hide);
+})();
 init();
 </script>
 </body>
