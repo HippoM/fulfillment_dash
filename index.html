@@ -256,16 +256,16 @@ function renderCharts(){
   mkChart('c_prod',{type:'line',data:{labels:labels,datasets:[{label:'Đơn/giờ/người',data:m.map(function(r){return r.prod&&+r.prod.toFixed(2);}),borderColor:'#1971c2',backgroundColor:'rgba(25,113,194,.12)',fill:true,tension:.3}]},options:opts({scales:{y:{beginAtZero:true}}})});
 
   mkChart('c_cost',{type:'bar',data:{labels:labels,datasets:[
-    {label:'Packaging/đơn',data:m.map(function(r){return Math.round(r.pack);}),backgroundColor:'#74c0fc'},
-    {label:'Fulfillment/đơn (tổng)',data:m.map(function(r){return Math.round(r.ffo);}),backgroundColor:'#1864ab'},
-    {type:'line',label:'Doanh thu TB/đơn',data:m.map(function(r){return r.don?Math.round(r.dt/r.don):null;}),borderColor:'#f08c00',backgroundColor:'#f08c00',tension:.3,yAxisID:'y1'}
+    {label:'Packaging/đơn',data:m.map(function(r){return Math.round(r.pack);}),backgroundColor:'#74c0fc',order:2},
+    {label:'Fulfillment/đơn (tổng)',data:m.map(function(r){return Math.round(r.ffo);}),backgroundColor:'#1864ab',order:2},
+    {type:'line',label:'Doanh thu TB/đơn',data:m.map(function(r){return r.don?Math.round(r.dt/r.don):null;}),borderColor:'#f08c00',backgroundColor:'#f08c00',tension:.3,yAxisID:'y1',order:1}
   ]},options:opts({scales:{y:{beginAtZero:true,position:'left',title:{display:true,text:'Chi phí/đơn'},ticks:tickVN},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'DT/đơn'},ticks:tickVN}}})});
 
   mkChart('c_pct',{type:'line',data:{labels:labels,datasets:[{label:'% FF/DT',data:m.map(function(r){return r.pct&&+r.pct.toFixed(2);}),borderColor:'#1971c2',tension:.3}]},options:opts({scales:{y:{beginAtZero:true,ticks:{callback:function(v){return v+'%';}}}}})});
 
   mkChart('c_vol',{type:'bar',data:{labels:labels,datasets:[
-    {type:'bar',label:'Đơn xử lý',data:m.map(function(r){return r.don;}),backgroundColor:'#74c0fc',yAxisID:'y'},
-    {type:'line',label:'Giờ công',data:m.map(function(r){return r.gio;}),borderColor:'#1864ab',tension:.3,yAxisID:'y1'}
+    {type:'bar',label:'Đơn xử lý',data:m.map(function(r){return r.don;}),backgroundColor:'#74c0fc',yAxisID:'y',order:2},
+    {type:'line',label:'Giờ công',data:m.map(function(r){return r.gio;}),borderColor:'#1864ab',tension:.3,yAxisID:'y1',order:1}
   ]},options:opts({scales:{y:{beginAtZero:true,position:'left',ticks:tickVN},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false},ticks:tickVN}}})});
 }
 
