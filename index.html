@@ -56,7 +56,7 @@ footer{color:var(--muted);font-size:12px;margin-top:14px}
 <body>
 <div class="wrap">
   <header>
-    <h1>Fulfillment KPI <small>T2C Mall · Đơn tự fulfill (trừ FBS, trừ Sỉ)</small></h1>
+    <h1>Fulfillment KPI <small>T2C Mall · Đơn tự fulfill (không gồm FBS, Sỉ)</small></h1>
     <div class="controls">
       <label for="month">Tháng</label>
       <select id="month"></select>
@@ -74,8 +74,8 @@ footer{color:var(--muted);font-size:12px;margin-top:14px}
   </div>
 
   <div class="grid kpi4s section">
-    <div class="card kpi small"><div class="label">Đơn xử lý <span class="help" tabindex="0" data-tip="Tổng đơn mọi kênh (đã loại đơn hủy, theo ngày đặt hàng) − đơn FBS (Shopee xử lý) − đơn Sỉ. Đơn Top Value vẫn được tính.">?</span></div><div class="value" id="s_don">–</div><div class="sub" id="s_don_sub"></div></div>
-    <div class="card kpi small"><div class="label">Doanh thu tự fulfill <span class="help" tabindex="0" data-tip="Doanh thu theo công thức Sales Dashboard, không gồm đơn FBS và đơn Sỉ. DT/đơn = Doanh thu tự fulfill ÷ Đơn xử lý.">?</span></div><div class="value" id="s_dt">–</div><div class="sub" id="s_dt_sub"></div></div>
+    <div class="card kpi small"><div class="label">Đơn xử lý <span class="help" tabindex="0" data-tip="Tổng đơn các kênh (không gồm Sỉ, đã loại đơn hủy, theo ngày đặt hàng) − đơn FBS (Shopee xử lý). Đơn Top Value vẫn được tính.">?</span></div><div class="value" id="s_don">–</div><div class="sub" id="s_don_sub"></div></div>
+    <div class="card kpi small"><div class="label">Doanh thu tự fulfill <span class="help" tabindex="0" data-tip="Doanh thu theo công thức Sales Dashboard, không gồm đơn FBS và Sỉ. DT/đơn = Doanh thu tự fulfill ÷ Đơn xử lý.">?</span></div><div class="value" id="s_dt">–</div><div class="sub" id="s_dt_sub"></div></div>
     <div class="card kpi small"><div class="label">Tổng giờ công <span class="help" tabindex="0" data-tip="Tổng cột &quot;Tổng giờ&quot; sheet Luong (HC + OT) trong tháng. Hiện chưa gồm giờ HC của full-time.">?</span></div><div class="value" id="s_gio">–</div><div class="sub" id="s_gio_sub"></div></div>
     <div class="card kpi small"><div class="label">Nhân sự <span class="help" tabindex="0" data-tip="Số mã nhân viên có giờ làm > 0 trong tháng, chia Full-time / Part-time theo cột &quot;Hình thức làm việc&quot; sheet Luong.">?</span></div><div class="value" id="s_ns">–</div><div class="sub" id="s_ns_sub"></div></div>
   </div>
@@ -173,7 +173,7 @@ function toNum(v){ if(v==null||v==='') return 0; var n = parseFloat(String(v).re
 
 /* ---------- Metrics ---------- */
 function calc(d){
-  var don = d.don_tong - d.don_fbs - d.don_si;
+  var don = d.don_tong - d.don_fbs;
   var gio = d.gio_hc + d.gio_ot;
   return {
     thang:d.thang, don:don, gio:gio, gio_hc:d.gio_hc, gio_ot:d.gio_ot,
@@ -214,7 +214,7 @@ function renderMonth(idx){
   setText('d_pct', deltaHtml(c.pct, p&&p.pct, false, ' đ.p', 2));
 
   setText('s_don', fmt(c.don));
-  setText('s_don_sub', 'Tổng '+fmt(c.don_tong)+' · FBS '+fmt(c.don_fbs)+' · Sỉ '+fmt(c.don_si));
+  setText('s_don_sub', 'Tổng '+fmt(c.don_tong)+' · FBS '+fmt(c.don_fbs));
   setText('s_dt', fmtBn(c.dt));
   setText('s_dt_sub', 'DT / đơn: '+fmt(c.don?c.dt/c.don:null)+' đ');
   setText('s_gio', fmt(c.gio)+' h');
@@ -303,17 +303,18 @@ function exportExcel(){
   function f(fx,z){ return {f:fx, t:'n', z:z||N}; }
 
   // Sheet 1: dữ liệu đầu vào + công thức
-  var h1 = ['Tháng','Đơn tổng','Đơn FBS','Đơn Sỉ','Doanh thu tự fulfill','Giờ HC','Giờ OT','SL Full-time','SL Part-time',
+  var h1 = ['Tháng','Đơn tổng','Đơn FBS','Doanh thu tự fulfill','Giờ HC','Giờ OT','SL Full-time','SL Part-time',
             'CP packaging','CP bốc xếp','Tổng CP fulfillment',
-            'Đơn xử lý','Tổng giờ công','Đơn/giờ/người','CP packaging/đơn','CP fulfillment/đơn','% FF/DT','DT/đơn','DT FBS','DT tổng mọi kênh'];
+            'Đơn xử lý','Tổng giờ công','Đơn/giờ/người','CP packaging/đơn','CP fulfillment/đơn','% FF/DT','DT/đơn','DT FBS','DT tổng (không gồm Sỉ)'];
   var a1 = [h1];
   DATA.forEach(function(d,i){
     var r = i+2;
-    a1.push([ {v:mLabel(d.thang),t:'s'}, c(d.don_tong), c(d.don_fbs), c(d.don_si), c(d.doanh_thu), c(d.gio_hc,D1), c(d.gio_ot,D1),
+    // A Tháng | B Đơn tổng | C FBS | D DT tự fulfill | E Giờ HC | F Giờ OT | G FT | H PT | I CP pack | J CP bốc xếp | K Tổng CP
+    a1.push([ {v:mLabel(d.thang),t:'s'}, c(d.don_tong), c(d.don_fbs), c(d.doanh_thu), c(d.gio_hc,D1), c(d.gio_ot,D1),
       c(d.sl_ft), c(d.sl_pt), c(d.cp_packaging), c(d.cp_boc_xep), c(d.cp_fulfillment),
-      f('B'+r+'-C'+r+'-D'+r), f('F'+r+'+G'+r,D1),
-      f('IF(N'+r+'=0,"",M'+r+'/N'+r+')',D1), f('IF(M'+r+'=0,"",J'+r+'/M'+r+')'), f('IF(M'+r+'=0,"",L'+r+'/M'+r+')'),
-      f('IF(E'+r+'=0,"",L'+r+'/E'+r+')',P), f('IF(M'+r+'=0,"",E'+r+'/M'+r+')'), c(d.dt_fbs||0), c(d.dt_tong||0) ]);
+      f('B'+r+'-C'+r), f('E'+r+'+F'+r,D1),                                         // L Đơn xử lý | M Tổng giờ
+      f('IF(M'+r+'=0,"",L'+r+'/M'+r+')',D1), f('IF(L'+r+'=0,"",I'+r+'/L'+r+')'), f('IF(L'+r+'=0,"",K'+r+'/L'+r+')'),
+      f('IF(D'+r+'=0,"",K'+r+'/D'+r+')',P), f('IF(L'+r+'=0,"",D'+r+'/L'+r+')'), c(d.dt_fbs||0), c(d.dt_tong||0) ]);
   });
   var ws1 = XLSX.utils.aoa_to_sheet(a1);
   ws1['!cols'] = h1.map(function(h){ return {wch: Math.max(11, h.length+2)}; });
@@ -330,17 +331,16 @@ function exportExcel(){
 
   // Sheet 3: định nghĩa & nguồn
   var a3 = [['Cột','Nguồn','Cách tính'],
-    ['Đơn tổng','Supabase (Sales Dashboard) – hàm fulfillment_orders_monthly','Số đơn mọi kênh (đã loại đơn hủy), gom theo ngày đặt hàng'],
+    ['Đơn tổng','Supabase – hàm fulfillment_orders_monthly (tháng đã khóa: v3, tháng chưa khóa: v2)','Số đơn các kênh, KHÔNG gồm Sỉ (đã loại đơn hủy), gom theo ngày đặt hàng'],
     ['Đơn FBS','Supabase – cột is_fbs','Đơn Shopee có "Đơn hàng được xử lý bởi Shopee" = Yes (chỉ T2C)'],
-    ['Đơn Sỉ','Supabase – platform Sỉ','Số dòng file Sỉ (file không có mã đơn)'],
-    ['Doanh thu tự fulfill','Supabase – cột revenue','Doanh thu theo công thức Sales Dashboard, không gồm đơn FBS và đơn Sỉ'],
-    ['DT FBS / DT tổng mọi kênh','Supabase – cột revenue','Doanh thu đơn FBS / tổng doanh thu mọi kênh (gồm FBS, Sỉ). Kiểm tra: DT tổng − DT Sỉ − DT FBS = Doanh thu tự fulfill'],
+    ['Doanh thu tự fulfill','Supabase – cột revenue','Doanh thu theo công thức Sales Dashboard, không gồm đơn FBS và Sỉ'],
+    ['DT FBS / DT tổng','Supabase – cột revenue','Doanh thu đơn FBS / tổng doanh thu các kênh (không gồm Sỉ). Kiểm tra: DT tổng − DT FBS = Doanh thu tự fulfill'],
     ['Giờ HC / Giờ OT','GSheet – sheet Luong','Tổng cột "Tổng giờ" theo Month PL, tách theo cột "Giờ làm (HC/OT)"'],
     ['SL Full-time / Part-time','GSheet – sheet Luong','Số mã nhân viên có giờ > 0 trong tháng'],
     ['CP packaging','GSheet – sheet Chi_phi_packaging','Credit − Debit, COA 72210, theo Month PL'],
     ['CP bốc xếp','GSheet – sheet Chi_phi_packaging','Credit − Debit, theo COA bốc xếp (chưa cấu hình → 0)'],
     ['Tổng CP fulfillment','GSheet – Luong + Chi_phi_packaging','Tổng lương + toàn bộ chi phí trong sheet Chi_phi_packaging'],
-    ['Đơn xử lý','Công thức','Đơn tổng − Đơn FBS − Đơn Sỉ'],
+    ['Đơn xử lý','Công thức','Đơn tổng − Đơn FBS'],
     ['Đơn/giờ/người','Công thức','Đơn xử lý ÷ Tổng giờ công'],
     ['CP packaging/đơn','Công thức','CP packaging ÷ Đơn xử lý'],
     ['CP fulfillment/đơn','Công thức','Tổng CP fulfillment ÷ Đơn xử lý'],
