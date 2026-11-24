@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>T2C Fulfillment KPI</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   --bg:#f5f6f8; --card:#ffffff; --text:#1d2433; --muted:#6b7385; --line:#e4e7ec;
@@ -35,6 +36,9 @@ button{cursor:pointer}
 .delta{font-weight:600}
 .delta.up{color:var(--good)} .delta.down{color:var(--bad)}
 .card h3{margin:0 0 10px;font-size:14px}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.card-head h3{margin:0}
+#export{font-size:13px;padding:5px 12px}
 .chartbox{position:relative;height:260px}
 .section{margin-top:12px}
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -84,7 +88,7 @@ footer{color:var(--muted);font-size:12px;margin-top:14px}
   </div>
 
   <div class="card section">
-    <h3>Chi tiết theo tháng</h3>
+    <div class="card-head"><h3>Chi tiết theo tháng</h3><button id="export" title="Tải file Excel gồm số đầu vào + công thức để đối chiếu">⬇ Xuất Excel</button></div>
     <div class="tablewrap"><table id="tbl"></table></div>
   </div>
 
@@ -271,7 +275,7 @@ function renderCharts(){
 
 function init(){
   loadData(function(data, isDemo){
-    DATA = data;
+    DATA = data; IS_DEMO = isDemo;
     if(isDemo && !CONFIG.CSV_URL && !CONFIG.API_URL) showBanner('<b>DỮ LIỆU DEMO</b> – số liệu giả lập để duyệt giao diện. Điền <code>CONFIG.CSV_URL</code> (link publish CSV của sheet Dash_data) để chạy số thật.');
     if(!DATA.length){ showBanner('Dash_data chưa có dòng nào.'); return; }
     var sel = document.getElementById('month');
@@ -279,10 +283,80 @@ function init(){
     sel.value = DATA.length-1;
     sel.onchange = function(){ renderMonth(+sel.value); };
     renderTable(); renderCharts(); renderMonth(DATA.length-1);
-    setText('foot', 'Nguồn: '+(isDemo?'DEMO':'GSheet Dash_data')+' · Cập nhật lúc '+new Date().toLocaleString('vi-VN'));
+    setText('foot', 'Nguồn: '+(isDemo?'DEMO':'Apps Script (GSheet + Supabase)')+' · Cập nhật lúc '+new Date().toLocaleString('vi-VN'));
   });
 }
 document.getElementById('reload').onclick = init;
+document.getElementById('export').onclick = exportExcel;
+
+/* ---------- Xuất Excel để đối chiếu ----------
+ * Sheet Du_lieu  : số đầu vào từng tháng + cột chỉ số tính bằng CÔNG THỨC Excel
+ * Sheet Chi_so_dash: đúng các số dash đang hiển thị (tính bằng JS)
+ * Sheet Nguon    : định nghĩa + nguồn của từng cột
+ */
+var IS_DEMO = false;
+function exportExcel(){
+  if(typeof XLSX === 'undefined'){ alert('Chưa tải được thư viện xuất Excel, thử lại sau.'); return; }
+  if(!DATA.length){ alert('Chưa có dữ liệu để xuất.'); return; }
+  var N='#,##0', D1='#,##0.0', P='0.00%';
+  function c(v,z){ return {v:v, t:'n', z:z||N}; }
+  function f(fx,z){ return {f:fx, t:'n', z:z||N}; }
+
+  // Sheet 1: dữ liệu đầu vào + công thức
+  var h1 = ['Tháng','Đơn tổng','Đơn FBS','Đơn Sỉ','Doanh thu tự fulfill','Giờ HC','Giờ OT','SL Full-time','SL Part-time',
+            'CP packaging','CP bốc xếp','Tổng CP fulfillment',
+            'Đơn xử lý','Tổng giờ công','Đơn/giờ/người','CP packaging/đơn','CP fulfillment/đơn','% FF/DT','DT/đơn'];
+  var a1 = [h1];
+  DATA.forEach(function(d,i){
+    var r = i+2;
+    a1.push([ {v:mLabel(d.thang),t:'s'}, c(d.don_tong), c(d.don_fbs), c(d.don_si), c(d.doanh_thu), c(d.gio_hc,D1), c(d.gio_ot,D1),
+      c(d.sl_ft), c(d.sl_pt), c(d.cp_packaging), c(d.cp_boc_xep), c(d.cp_fulfillment),
+      f('B'+r+'-C'+r+'-D'+r), f('F'+r+'+G'+r,D1),
+      f('IF(N'+r+'=0,"",M'+r+'/N'+r+')',D1), f('IF(M'+r+'=0,"",J'+r+'/M'+r+')'), f('IF(M'+r+'=0,"",L'+r+'/M'+r+')'),
+      f('IF(E'+r+'=0,"",L'+r+'/E'+r+')',P), f('IF(M'+r+'=0,"",E'+r+'/M'+r+')') ]);
+  });
+  var ws1 = XLSX.utils.aoa_to_sheet(a1);
+  ws1['!cols'] = h1.map(function(h){ return {wch: Math.max(11, h.length+2)}; });
+
+  // Sheet 2: số dash đang hiển thị
+  var h2 = ['Tháng','Đơn xử lý','Tổng giờ công','Đơn/giờ/người','CP packaging/đơn','CP fulfillment/đơn','% FF/DT','DT/đơn'];
+  var a2 = [h2];
+  DATA.map(calc).forEach(function(m){
+    a2.push([ {v:mLabel(m.thang),t:'s'}, c(m.don), c(m.gio,D1), c(m.prod==null?'':m.prod,D1), c(m.pack==null?'':m.pack),
+      c(m.ffo==null?'':m.ffo), c(m.pct==null?'':m.pct/100,P), c(m.don?m.dt/m.don:'') ]);
+  });
+  var ws2 = XLSX.utils.aoa_to_sheet(a2);
+  ws2['!cols'] = h2.map(function(){ return {wch:18}; });
+
+  // Sheet 3: định nghĩa & nguồn
+  var a3 = [['Cột','Nguồn','Cách tính'],
+    ['Đơn tổng','Supabase (Sales Dashboard) – hàm fulfillment_orders_monthly','Số đơn mọi kênh (đã loại đơn hủy), gom theo ngày đặt hàng'],
+    ['Đơn FBS','Supabase – cột is_fbs','Đơn Shopee có "Đơn hàng được xử lý bởi Shopee" = Yes (chỉ T2C)'],
+    ['Đơn Sỉ','Supabase – platform Sỉ','Số dòng file Sỉ (file không có mã đơn)'],
+    ['Doanh thu tự fulfill','Supabase – cột revenue','Doanh thu theo công thức Sales Dashboard, không gồm đơn FBS và đơn Sỉ'],
+    ['Giờ HC / Giờ OT','GSheet – sheet Luong','Tổng cột "Tổng giờ" theo Month PL, tách theo cột "Giờ làm (HC/OT)"'],
+    ['SL Full-time / Part-time','GSheet – sheet Luong','Số mã nhân viên có giờ > 0 trong tháng'],
+    ['CP packaging','GSheet – sheet Chi_phi_packaging','Credit − Debit, COA 72210, theo Month PL'],
+    ['CP bốc xếp','GSheet – sheet Chi_phi_packaging','Credit − Debit, theo COA bốc xếp (chưa cấu hình → 0)'],
+    ['Tổng CP fulfillment','GSheet – Luong + Chi_phi_packaging','Tổng lương + toàn bộ chi phí trong sheet Chi_phi_packaging'],
+    ['Đơn xử lý','Công thức','Đơn tổng − Đơn FBS − Đơn Sỉ'],
+    ['Đơn/giờ/người','Công thức','Đơn xử lý ÷ Tổng giờ công'],
+    ['CP packaging/đơn','Công thức','CP packaging ÷ Đơn xử lý'],
+    ['CP fulfillment/đơn','Công thức','Tổng CP fulfillment ÷ Đơn xử lý'],
+    ['% FF/DT','Công thức','Tổng CP fulfillment ÷ Doanh thu tự fulfill'],
+    [''],
+    ['Đối chiếu','','Sheet Du_lieu (công thức Excel) phải khớp sheet Chi_so_dash (số dash hiển thị).'],
+    ['Nguồn file', IS_DEMO?'DỮ LIỆU DEMO – không phải số thật':'Số thật', 'Xuất lúc '+new Date().toLocaleString('vi-VN')]];
+  var ws3 = XLSX.utils.aoa_to_sheet(a3);
+  ws3['!cols'] = [{wch:24},{wch:52},{wch:80}];
+
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws1, 'Du_lieu');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Chi_so_dash');
+  XLSX.utils.book_append_sheet(wb, ws3, 'Nguon');
+  var d = new Date(), stamp = d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  XLSX.writeFile(wb, (IS_DEMO?'DEMO_':'')+'Fulfillment_KPI_'+stamp+'.xlsx');
+}
 
 /* Note định nghĩa: bấm ? để hiện, bấm chỗ khác để ẩn */
 (function(){
