@@ -118,6 +118,7 @@ var DEMO_DATA = [
   {thang:'202610',don_tong:78100,don_fbs:5600,don_si:1400,doanh_thu:17600000000,gio_hc:3369,gio_ot:745,sl_ft:9,sl_pt:13,cp_packaging:218300000,cp_boc_xep:24800000,cp_fulfillment:382264000}
 ];
 
+var LAST_AT = null;
 var NUM_FIELDS = ['don_tong','don_fbs','don_si','doanh_thu','gio_hc','gio_ot','sl_ft','sl_pt','cp_packaging','cp_boc_xep','cp_fulfillment','dt_fbs','dt_tong'];
 var DATA = [];
 var CHARTS = {};
@@ -133,9 +134,21 @@ function loadData(cb){
           o.thang = String(o.thang).replace(/\D/g,''); return o;
         });
         rows.sort(function(a,b){return a.thang<b.thang?-1:1;});
+        if(j.stale) showBanner('Supabase đang chậm – đang hiển thị số tính lúc '+new Date(j.updated).toLocaleString('vi-VN')+'. Bấm "Tải lại" sau ít phút.');
+        else { try{ localStorage.setItem('ff_last_ok', JSON.stringify({at:j.updated, rows:rows})); }catch(se){} }
+        LAST_AT = j.updated;
         cb(rows, false);
       })
-      .catch(function(e){ showBanner('Không gọi được API ('+e.message+'). Đang hiển thị dữ liệu DEMO.'); cb(DEMO_DATA.slice(), true); });
+      .catch(function(e){
+        // Không gọi được -> dùng bản tốt gần nhất đã lưu trên trình duyệt, chỉ khi không có mới dùng DEMO
+        var last = null; try{ last = JSON.parse(localStorage.getItem('ff_last_ok')||'null'); }catch(se){}
+        if(last && last.rows && last.rows.length){
+          showBanner('Không gọi được API ('+e.message+'). Đang hiển thị số tải lần trước lúc '+new Date(last.at).toLocaleString('vi-VN')+'.');
+          LAST_AT = last.at; cb(last.rows, false);
+        } else {
+          showBanner('Không gọi được API ('+e.message+'). Đang hiển thị dữ liệu DEMO.'); cb(DEMO_DATA.slice(), true);
+        }
+      });
     return;
   }
   if(!CONFIG.CSV_URL){ cb(DEMO_DATA.slice(), true); return; }
@@ -283,7 +296,7 @@ function init(){
     sel.value = DATA.length-1;
     sel.onchange = function(){ renderMonth(+sel.value); };
     renderTable(); renderCharts(); renderMonth(DATA.length-1);
-    setText('foot', 'Nguồn: '+(isDemo?'DEMO':'Apps Script (GSheet + Supabase)')+' · Cập nhật lúc '+new Date().toLocaleString('vi-VN'));
+    setText('foot', 'Nguồn: '+(isDemo?'DEMO':'Apps Script (GSheet + Supabase)')+' · Số liệu tính lúc '+(LAST_AT?new Date(LAST_AT):new Date()).toLocaleString('vi-VN'));
   });
 }
 document.getElementById('reload').onclick = init;
